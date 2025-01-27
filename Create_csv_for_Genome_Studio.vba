@@ -34,14 +34,14 @@ Sub ExportCytoChipData()
             If ws.Cells(rowIndex, "B").Value = 1 Then
                 firstRowIndex = rowIndex
                 foundFirst = True
-                Exit For ' Stop once the first row with B = 1 is found
+                Exit For
             End If
         End If
     Next rowIndex
 
     ' Exit if no valid row is found
     If firstRowIndex = 0 Then
-        MsgBox "No matching row found where column B = 1 and column L is not empty.", vbExclamation
+        MsgBox "Ei õnnestunud järjekorranumbriga 1 algavat patsientide blokki.", vbExclamation
         Exit Sub
     End If
 
@@ -71,20 +71,16 @@ Sub ExportCytoChipData()
     ' Array to store SentrixPosition_A values cycling through (up to R08C01)
     positions = Array("R01C01", "R02C01", "R03C01", "R04C01", "R05C01", "R06C01", "R07C01", "R08C01")
 
-    ' Array to simulate barcode values
-    barcodes = Array("208698540015", "208698540016", "208698540075", "208698540087")
-
     ' Reset counters
     sampleCounter = 1
     positionIndex = 0
-    barcodeIndex = 0
 
     ' Loop upwards from first found row with B = 1
     For rowIndex = firstRowIndex To lastRow
         If ws.Cells(rowIndex, "L").Value <> "" Then
             rowData = ws.Cells(rowIndex, "E").Value & ",cyto,,cyto,," & _
                       "A" & Format(sampleCounter, "00") & "," & _
-                      barcodes(barcodeIndex) & "," & _
+                      ws.Cells(rowIndex, "L").Value & "," & _
                       positions(positionIndex) & ",,,,,,,,,"
 
             Print #1, rowData
@@ -96,8 +92,6 @@ Sub ExportCytoChipData()
             ' If we reach the 8th position, reset and move to next barcode
             If positionIndex > UBound(positions) Then
                 positionIndex = 0
-                barcodeIndex = barcodeIndex + 1
-                If barcodeIndex > UBound(barcodes) Then barcodeIndex = 0
             End If
 
             ' Reset sampleCounter every 8 samples
@@ -108,8 +102,5 @@ Sub ExportCytoChipData()
     ' Close file
     Close #1
 
-    MsgBox "CSV file created successfully: " & filePath, vbInformation
+    MsgBox "Salvestasin faili siia: " & filePath, vbInformation
 End Sub
-
-
-
