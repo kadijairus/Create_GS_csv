@@ -7,6 +7,7 @@ Sub ExportCytoChipData()
     Dim header As String
     Dim outputFileName As String
     Dim filePath As String
+    Dim dlgSaveFolder As FileDialog
     Dim rowData As String
     Dim sampleCounter As Integer
     Dim positionIndex As Integer
@@ -44,11 +45,7 @@ Sub ExportCytoChipData()
         MsgBox "Ei õnnestunud järjekorranumbriga 1 algavat patsientide blokki.", vbExclamation
         Exit Sub
     End If
-
-    ' Display message box with values from column C for first and last rows
-    MsgBox "Esimene patsient: " & ws.Cells(firstRowIndex, "C").Value & vbCrLf & _
-           "Viimane patsient: " & ws.Cells(lastRow, "C").Value, vbInformation
-
+    
     ' Prepare header for the CSV file with dynamic date
     header = "[Header],,,,,,,,,,,,,,,," & vbCrLf & _
              "Investigator Name,,,,,,,,,,,,,,,," & vbCrLf & _
@@ -62,7 +59,26 @@ Sub ExportCytoChipData()
 
     ' Define output file name with dynamic date
     outputFileName = "CytoChip_" & Replace(currentDate, ".", "_") & ".csv"
-    filePath = ThisWorkbook.Path & "\" & outputFileName
+    
+    
+    
+    MsgBox "Ekspordin " & lastRow - firstRowIndex + 1 & " patsienti:" & vbCrLf & _
+        "Esimene patsient: " & ws.Cells(firstRowIndex, "C").Value & vbCrLf & _
+           "Viimane patsient: " & ws.Cells(lastRow, "C").Value & vbCrLf & _
+           "Järgmisena palun vali kaust, kuhu soovid csv-faili salvestada"
+
+    ' Show folder picker dialog to select the save location
+    Set dlgSaveFolder = Application.FileDialog(msoFileDialogFolderPicker)
+    With dlgSaveFolder
+        .Title = "Vali kaust kuhu soovid csv-faili salvestada"
+        .AllowMultiSelect = False
+        If .Show = -1 Then
+            filePath = .SelectedItems(1) & "\" & outputFileName
+        Else
+            MsgBox "Kausta valimine tühistati.", vbExclamation
+            Exit Sub
+        End If
+    End With
 
     ' Open file for writing
     Open filePath For Output As #1
