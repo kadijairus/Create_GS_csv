@@ -1,3 +1,13 @@
+'**********************************************************************************
+' Purpose:      Create csv file with patients positions for GenomeStudio
+' Input:        Patient data and Illumina chip numbers in Excel worksheet
+' Output:       A .csv file with patient data combined with correct plate positions
+' Version:      v1 28.01.2025
+' Changes:      Added selecting save path
+' Author:       Kadi Jairus
+'               kadi.jairus@kliinikum.ee
+'*********************************************************************************
+
 Sub ExportCytoChipData()
     Dim ws As Worksheet
     Dim lastRow As Long
