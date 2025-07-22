@@ -2,8 +2,8 @@
 ' Purpose:      Create csv file with patients positions for GenomeStudio
 ' Input:        Patient data and Illumina chip numbers in Excel worksheet
 ' Output:       A .csv file with patient data combined with correct plate positions
-' Version:      v1 28.01.2025
-' Changes:      Added selecting save path
+' Version:      v2 22.07.2025
+' Changes:      Added 8-block validation: 8 samples must have the same plate serial
 ' Author:       Kadi Jairus
 '               kadi.jairus@kliinikum.ee
 '*********************************************************************************
@@ -25,6 +25,8 @@ Sub ExportCytoChipData()
     Dim currentDate As String
     Dim positions As Variant
     Dim barcodes As Variant
+    ' Variable to hold the validated barcode (plate serial) for the current block of 8 samples
+    Dim currentBarcode As String
 
     ' Set worksheet to the currently active sheet
     Set ws = ActiveSheet
@@ -97,31 +99,44 @@ Sub ExportCytoChipData()
     ' Array to store SentrixPosition_A values cycling through (up to R08C01)
     positions = Array("R01C01", "R02C01", "R03C01", "R04C01", "R05C01", "R06C01", "R07C01", "R08C01")
 
-    ' Reset counters
-    sampleCounter = 1
-    positionIndex = 0
+    ' Initialize barcode variable
+    currentBarcode = ""
 
-    ' Loop upwards from first found row with B = 1
+    ' Loop upwards from the first found row
     For rowIndex = firstRowIndex To lastRow
         If ws.Cells(rowIndex, "L").Value <> "" Then
+            
+            ' Determine the position within the current block of 8 (0-7)
+            positionIndex = (rowIndex - firstRowIndex) Mod 8
+            
+            ' If it's the first sample in a new block, store its barcode as the reference.
+            If positionIndex = 0 Then
+                currentBarcode = ws.Cells(rowIndex, "L").Value
+            End If
+            
+            ' *** VALIDATION STEP ***
+            ' Check if the barcode in the current row matches the reference barcode for this block.
+            If ws.Cells(rowIndex, "L").Value <> currentBarcode Then
+                MsgBox "VIGA ANDMETES: Plaadi numbri viga." & vbCrLf & vbCrLf & _
+                       "Rida " & rowIndex & " patsient " & ws.Cells(rowIndex, "E").Value & " tulbas L on vale plaadi seerianumber." & vbCrLf & vbCrLf & _
+                       "Peaks olema: " & currentBarcode & vbCrLf & _
+                       "Leitud kood: " & ws.Cells(rowIndex, "L").Value & vbCrLf & vbCrLf & _
+                       "CSV-faili tegemine on peatatud. Palun paranda andmed ja proovi uuesti!", vbCritical, "Viga andmetes"
+                Close #1 ' Close the file to avoid a partial export
+                Kill filePath ' Delete the incomplete file
+                Exit Sub
+            End If
+
+            ' The sample counter is the position index + 1 (1-8)
+            sampleCounter = positionIndex + 1
+
+            ' Construct the row data using the validated barcode for the entire block
             rowData = ws.Cells(rowIndex, "E").Value & ",cyto,,cyto,," & _
                       "A" & Format(sampleCounter, "00") & "," & _
-                      ws.Cells(rowIndex, "L").Value & "," & _
+                      currentBarcode & "," & _
                       positions(positionIndex) & ",,,,,,,,,"
 
             Print #1, rowData
-
-            ' Update counters for sample and position logic
-            sampleCounter = sampleCounter + 1
-            positionIndex = positionIndex + 1
-
-            ' If we reach the 8th position, reset and move to next barcode
-            If positionIndex > UBound(positions) Then
-                positionIndex = 0
-            End If
-
-            ' Reset sampleCounter every 8 samples
-            If sampleCounter > 8 Then sampleCounter = 1
         End If
     Next rowIndex
 
